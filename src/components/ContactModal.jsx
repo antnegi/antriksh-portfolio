@@ -1,22 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Send, Mail, Phone, Linkedin, MessageSquare } from 'lucide-react';
 import { portfolioData } from '../data/portfolioData';
+
+const WEB3FORMS_ACCESS_KEY = '18c91766-4470-4831-97eb-bcc1e02b9f98';
 
 export default function ContactModal({ isOpen, onClose }) {
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setSubmitted(false);
+      setErrorMessage('');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const { contact } = portfolioData;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      onClose();
-    }, 2500);
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_ACCESS_KEY,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          message: formData.message.trim(),
+          subject: `Portfolio Inquiry from ${formData.name.trim()}`,
+          from_name: formData.name.trim(),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitted(true);
+        setFormData({ name: '', email: '', message: '' });
+      } else {
+        setErrorMessage(result.message || 'Unable to submit your message. Please try again.');
+      }
+    } catch (err) {
+      setErrorMessage('Network error occurred. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -90,6 +131,18 @@ export default function ContactModal({ isOpen, onClose }) {
             </div>
             <h4 className="text-lg font-semibold">Message Dispatched</h4>
             <p className="text-xs text-white/70">Thank you for reaching out. I will get back to you promptly.</p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitted(false);
+                  onClose();
+                }}
+                className="px-6 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 my-4">
@@ -99,11 +152,13 @@ export default function ContactModal({ isOpen, onClose }) {
               </label>
               <input
                 type="text"
+                name="name"
                 required
+                disabled={isSubmitting}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Your full name"
-                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/80 text-sm"
+                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/80 text-sm disabled:opacity-60"
               />
             </div>
 
@@ -113,11 +168,13 @@ export default function ContactModal({ isOpen, onClose }) {
               </label>
               <input
                 type="email"
+                name="email"
                 required
+                disabled={isSubmitting}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="name@enterprise.com"
-                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/80 text-sm"
+                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/80 text-sm disabled:opacity-60"
               />
             </div>
 
@@ -127,28 +184,38 @@ export default function ContactModal({ isOpen, onClose }) {
               </label>
               <textarea
                 rows={3}
+                name="message"
                 required
+                disabled={isSubmitting}
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="Brief description of your business needs, technology challenges, or partnership opportunities..."
-                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/80 text-sm resize-none"
+                className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/80 text-sm resize-none disabled:opacity-60"
               />
             </div>
+
+            {errorMessage && (
+              <div className="p-3 rounded-2xl bg-black/30 border border-white/20 text-xs text-red-200">
+                {errorMessage}
+              </div>
+            )}
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-full text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                disabled={isSubmitting}
+                className="px-5 py-2.5 rounded-full text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-60"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="glass-btn-primary flex items-center gap-2 px-7 py-3 rounded-full text-xs font-bold text-neutral-900"
+                disabled={isSubmitting}
+                className="glass-btn-primary flex items-center gap-2 px-7 py-3 rounded-full text-xs font-bold text-neutral-900 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Send className="w-4 h-4" />
-                <span>Send Message</span>
+                <Send className={`w-4 h-4 ${isSubmitting ? 'animate-pulse' : ''}`} />
+                <span>{isSubmitting ? 'Sending...' : 'Send Message'}</span>
               </button>
             </div>
           </form>
