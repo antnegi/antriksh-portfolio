@@ -27,7 +27,7 @@ export default function AboutModal({ isOpen, onClose }) {
           </div>
           <div>
             <h3 className="text-xl font-bold tracking-tight">
-              About {portfolioData.fullName || portfolioData.name}
+              {about.heading || "Antriksh Singh Negi"}
             </h3>
             <p className="text-xs text-white/70">
               {about.subtitle || portfolioData.professionalTitle}

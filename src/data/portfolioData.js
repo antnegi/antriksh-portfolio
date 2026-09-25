@@ -63,6 +63,7 @@ export const portfolioData = {
 
   // 8. About Section Content
   about: {
+    heading: "Antriksh Singh Negi",
     title: "About Me",
     subtitle: "Client Partner | Technology & Digital Transformation",
     bioParagraphs: [
